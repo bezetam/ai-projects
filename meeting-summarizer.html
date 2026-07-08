@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meeting Summarizer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      padding: 40px 20px;
+    }
+
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: #6b6b66; margin-bottom: 28px; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0deda;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b6b66;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    .key-row { display: flex; gap: 10px; margin-bottom: 16px; }
+
+    .key-row input {
+      flex: 1;
+      font-size: 13px;
+      padding: 8px 12px;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      background: #fafaf8;
+      color: #1a1a18;
+      font-family: monospace;
+    }
+
+    .key-row input:focus { outline: none; border-color: #888; }
+
+    .key-hint { font-size: 12px; color: #9b9b95; margin-bottom: 16px; }
+    .key-hint a { color: #555; }
+
+    textarea {
+      width: 100%;
+      height: 240px;
+      resize: vertical;
+      font-size: 14px;
+      font-family: system-ui, sans-serif;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fafaf8;
+      color: #1a1a18;
+      line-height: 1.6;
+    }
+
+    textarea:focus { outline: none; border-color: #888; }
+
+    button {
+      margin-top: 14px;
+      width: 100%;
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 500;
+      background: #1a1a18;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover    { background: #333330; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+
+    .status-msg { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+    .status-loading { background: #f0efeb; color: #5a5a55; }
+    .status-error   { background: #FAECE7; color: #993C1D; }
+
+    /* ── Results ── */
+    #results-section { display: none; }
+
+    .section-block { margin-bottom: 22px; }
+    .section-block:last-child { margin-bottom: 0; }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b6b66;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-count {
+      font-size: 11px;
+      background: #f0efeb;
+      color: #5a5a55;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* Plain summary text */
+    .summary-text {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #1a1a18;
+      background: #fafaf8;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+
+    /* Action item / decision rows */
+    .item-row {
+      background: #fafaf8;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .item-row:last-child { margin-bottom: 0; }
+
+    .item-text { margin-bottom: 6px; line-height: 1.5; }
+
+    .item-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .chip { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+    .chip-owner { background: #E6F1FB; color: #185FA5; }
+    .chip-due   { background: #FAEEDA; color: #854F0B; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <h1>Meeting summarizer</h1>
+  <p class="subtitle">Paste a meeting or standup transcript. Get a summary, action items, and decisions.</p>
+
+  <div class="card">
+
+    <label for="api-key">Google AI Studio API key</label>
+    <div class="key-row">
+      <input type="password" id="api-key" placeholder="AIza..." />
+    </div>
+    <p class="key-hint">
+      Free key (no credit card) at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>.
+      Your key never leaves your browser.
+    </p>
+
+    <label for="transcript-input">Transcript</label>
+    <textarea
+      id="transcript-input"
+      placeholder="Paste your meeting or standup transcript here...
+
+e.g.
+Sarah: Backend API is done, just needs QA sign off by Friday.
+Mike: Blocked on the design handoff, need the Figma file from Priya.
+Priya: I'll send the Figma file today.
+Team: Agreed to push the launch date to next Wednesday."
+    ></textarea>
+
+    <button id="generate-btn" onclick="summarize()">Summarize meeting</button>
+    <div id="status-msg" style="display:none"></div>
+
+  </div>
+
+  <!-- Results -->
+  <div id="results-section" class="card">
+
+    <div class="section-block">
+      <div class="section-title">Summary</div>
+      <div class="summary-text" id="summary-text"></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-title">
+        Action items
+        <span class="section-count" id="action-count"></span>
+      </div>
+      <div id="action-list"></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-title">
+        Decisions
+        <span class="section-count" id="decision-count"></span>
+      </div>
+      <div id="decision-list"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+  // ─── SUMMARIZE ───────────────────────────────────────────────────────────
+
+  async function summarize() {
+    const apiKey    = document.getElementById('api-key').value.trim();
+    const transcript = document.getElementById('transcript-input').value.trim();
+
+    if (!apiKey)     { showStatus('error', 'Please enter your Google AI Studio API key.'); return; }
+    if (!transcript) { showStatus('error', 'Please paste a transcript first.'); return; }
+
+    setLoading(true);
+    showStatus('loading', 'Sending to Gemini…');
+
+    try {
+
+      // ── The prompt: this is the new concept for this project ────────────
+      //
+      // Instead of asking for ONE list (like PRD → Tasks did), we ask Claude
+      // for THREE separate sections in a single JSON object. Each section
+      // has a different shape:
+      //   - summary        → a single string
+      //   - action_items   → an array of {task, owner, due} objects
+      //   - decisions      → an array of plain strings
+      //
+      // Giving each field its own clear shape is what makes it possible to
+      // reliably render three different UI sections from one API call.
+
+      const prompt = `
+You are a Technical Project Manager assistant. Read the following meeting or standup transcript and extract three things.
+
+Return ONLY a JSON object with this EXACT shape. No explanation, no markdown, just the raw JSON.
+
+{
+  "summary": "A 2-3 sentence plain-English summary of what was discussed",
+  "action_items": [
+    { "task": "short description of the task", "owner": "person's name or 'Unassigned'", "due": "deadline mentioned, or 'Not specified'" }
+  ],
+  "decisions": [
+    "short description of a decision that was made"
+  ]
+}
+
+Rules:
+- If no action items were mentioned, return an empty array for "action_items".
+- If no decisions were made, return an empty array for "decisions".
+- Keep each action item and decision to one sentence.
+- Attribute owners by name only if a name was actually mentioned in the transcript.
+
+Transcript:
+${transcript}
+      `.trim();
+
+      // ── Gemini API call ───────────────────────────────────────────────────
+      // Same three differences as the PRD → Tasks swap:
+      //   1. API key goes in the URL, not a header
+      //   2. Request body uses "contents" instead of "messages"
+      //   3. responseMimeType: 'application/json' guarantees clean JSON back
+      const model   = 'gemini-2.5-flash';
+      const url     = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' }
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data    = await response.json();
+      const rawText = data.candidates[0].content.parts[0].text;
+      const cleaned = rawText.replace(/```json|```/g, '').trim();
+
+      // ── Parse the single JSON object with three fields ───────────────────
+      const result = JSON.parse(cleaned);
+
+      hideStatus();
+      displayResults(result);
+
+    } catch (err) {
+      showStatus('error', 'Something went wrong: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+  // ─── DISPLAY ─────────────────────────────────────────────────────────────
+  // Each of the three fields renders into its own section of the page.
+
+  function displayResults(result) {
+    const section = document.getElementById('results-section');
+
+    // Section 1: Summary — just plain text
+    document.getElementById('summary-text').textContent = result.summary;
+
+    // Section 2: Action items — a list of objects with owner + due chips
+    const actionList  = document.getElementById('action-list');
+    const actionCount = document.getElementById('action-count');
+    actionList.innerHTML = '';
+
+    if (result.action_items.length === 0) {
+      actionList.innerHTML = '<div class="item-row" style="color:#9b9b95;">No action items identified</div>';
+      actionCount.textContent = '0';
+    } else {
+      actionCount.textContent = result.action_items.length;
+      result.action_items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+          <div class="item-text">${item.task}</div>
+          <div class="item-meta">
+            <span class="chip chip-owner">${item.owner}</span>
+            <span class="chip chip-due">${item.due}</span>
+          </div>
+        `;
+        actionList.appendChild(row);
+      });
+    }
+
+    // Section 3: Decisions — a simple list of strings
+    const decisionList  = document.getElementById('decision-list');
+    const decisionCount = document.getElementById('decision-count');
+    decisionList.innerHTML = '';
+
+    if (result.decisions.length === 0) {
+      decisionList.innerHTML = '<div class="item-row" style="color:#9b9b95;">No decisions identified</div>';
+      decisionCount.textContent = '0';
+    } else {
+      decisionCount.textContent = result.decisions.length;
+      result.decisions.forEach(decision => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `<div class="item-text">${decision}</div>`;
+        decisionList.appendChild(row);
+      });
+    }
+
+    section.style.display = 'block';
+  }
+
+
+  // ─── HELPERS ─────────────────────────────────────────────────────────────
+
+  function setLoading(isLoading) {
+    const btn       = document.getElementById('generate-btn');
+    btn.disabled    = isLoading;
+    btn.textContent = isLoading ? 'Summarizing…' : 'Summarize meeting';
+  }
+
+  function showStatus(type, message) {
+    const el         = document.getElementById('status-msg');
+    el.className     = 'status-msg ' + (type === 'error' ? 'status-error' : 'status-loading');
+    el.textContent   = message;
+    el.style.display = 'block';
+  }
+
+  function hideStatus() {
+    document.getElementById('status-msg').style.display = 'none';
+  }
+
+</script>
+
+</body>
+</html>
