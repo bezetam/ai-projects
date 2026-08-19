@@ -259,7 +259,7 @@
     <label>AI Model</label>
     <div class="model-switcher">
       <button class="model-btn active" id="btn-gemini" onclick="switchModel('gemini')">
-        Gemini 2.5 Flash — free tier
+        Gemini 3.6 Flash — free tier
       </button>
       <button class="model-btn" id="btn-claude" onclick="switchModel('claude')">
         Claude Sonnet 4 — ~$0.02/run
@@ -465,7 +465,7 @@ Write the release notes now. Output only the release notes in markdown, no pream
   // ─── GEMINI API ──────────────────────────────────────────────────────────
 
   async function callGemini(apiKey, prompt) {
-    const model = 'gemini-2.5-flash';
+    const model = 'gemini-3.6-flash';
     const url   = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {

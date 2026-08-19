@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRD → Tasks</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      padding: 40px 20px;
+    }
+
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: #6b6b66; margin-bottom: 28px; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0deda;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b6b66;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    /* ── Model switcher ── */
+    .model-switcher {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .model-btn {
+      flex: 1;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      background: #fafaf8;
+      color: #6b6b66;
+      cursor: pointer;
+      margin-top: 0;
+      width: auto;
+      text-align: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .model-btn.active {
+      background: #1a1a18;
+      color: #fff;
+      border-color: #1a1a18;
+    }
+
+    /* ── API key input ── */
+    .key-row { display: flex; gap: 10px; margin-bottom: 16px; }
+
+    .key-row input {
+      flex: 1;
+      font-size: 13px;
+      padding: 8px 12px;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      background: #fafaf8;
+      color: #1a1a18;
+      font-family: monospace;
+    }
+
+    .key-row input:focus { outline: none; border-color: #888; }
+
+    .key-hint { font-size: 12px; color: #9b9b95; margin-bottom: 16px; }
+    .key-hint a { color: #555; }
+
+    /* ── PRD textarea ── */
+    textarea {
+      width: 100%;
+      height: 180px;
+      resize: vertical;
+      font-size: 14px;
+      font-family: system-ui, sans-serif;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fafaf8;
+      color: #1a1a18;
+      line-height: 1.6;
+    }
+
+    textarea:focus { outline: none; border-color: #888; }
+
+    /* ── Buttons ── */
+    button {
+      margin-top: 14px;
+      width: 100%;
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 500;
+      background: #1a1a18;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover   { background: #333330; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+
+    /* ── Status messages ── */
+    .status-msg { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+    .status-loading { background: #f0efeb; color: #5a5a55; }
+    .status-error   { background: #FAECE7; color: #993C1D; }
+
+    /* ── Results section ── */
+    #results-section { display: none; }
+
+    .results-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .results-left { display: flex; align-items: center; gap: 10px; }
+
+    .results-header {
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b6b66;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .task-count {
+      font-size: 12px;
+      font-weight: 500;
+      background: #f0efeb;
+      color: #5a5a55;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* ── Saved badge (shows when loaded from storage) ── */
+    .saved-badge {
+      font-size: 11px;
+      background: #EAF3DE;
+      color: #3B6D11;
+      padding: 2px 8px;
+      border-radius: 20px;
+      display: none;
+    }
+
+    /* ── Action buttons row (export + clear) ── */
+    .action-row { display: flex; gap: 8px; }
+
+    .action-btn {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 12px;
+      margin-top: 0;
+      width: auto;
+      background: #fff;
+      color: #1a1a18;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .action-btn:hover { background: #f5f5f3; }
+
+    .action-btn.danger { color: #993C1D; border-color: #f5c4b3; }
+    .action-btn.danger:hover { background: #FAECE7; }
+
+    /* ── Task cards ── */
+    .task-card {
+      background: #fafaf8;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .task-title       { font-size: 14px; font-weight: 500; margin-bottom: 6px; padding-right: 36px; }
+    .task-description { font-size: 13px; color: #5a5a55; margin-bottom: 10px; line-height: 1.5; }
+    .task-meta        { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .chip        { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+    .chip-p1     { background: #FAECE7; color: #993C1D; }
+    .chip-p2     { background: #FAEEDA; color: #854F0B; }
+    .chip-p3     { background: #EAF3DE; color: #3B6D11; }
+    .chip-team   { background: #E6F1FB; color: #185FA5; }
+    .chip-points { background: #f0efeb; color: #5a5a55; }
+
+    /* Model chip on each task */
+    .chip-gemini { background: #e8f4ec; color: #1a7340; }
+    .chip-claude { background: #f0eef9; color: #4c3d9e; }
+
+    .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 28px;
+      height: 28px;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      border: 1px solid #e0deda;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+    }
+
+    .copy-btn:hover  { background: #f0efeb; color: #1a1a18; }
+    .copy-btn.copied { background: #EAF3DE; color: #3B6D11; border-color: #c5e0a8; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <h1>PRD → Tasks</h1>
+  <p class="subtitle">Paste a product requirements doc. Get actionable tasks back.</p>
+
+  <div class="card">
+
+    <!-- ── Model switcher ── -->
+    <label>AI Model</label>
+    <div class="model-switcher">
+      <button class="model-btn active" id="btn-gemini" onclick="switchModel('gemini')">
+        Gemini 3.6 Flash — free tier
+      </button>
+      <button class="model-btn" id="btn-claude" onclick="switchModel('claude')">
+        Claude Sonnet 4 — ~$0.01/run
+      </button>
+    </div>
+
+    <!-- ── API key (label and hint update dynamically) ── -->
+    <label id="key-label">Google AI Studio API Key</label>
+    <div class="key-row">
+      <input type="password" id="api-key" placeholder="AIza..." />
+    </div>
+    <p class="key-hint" id="key-hint">
+      Free key at <a id="key-link" href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>. Your key never leaves your browser.
+    </p>
+
+    <label for="prd-input">Your PRD</label>
+    <textarea id="prd-input" placeholder="Paste your PRD here…"></textarea>
+
+    <button id="generate-btn" onclick="generateTasks()">Generate tasks</button>
+    <div id="status-msg" style="display:none"></div>
+
+  </div>
+
+  <!-- ── Results ── -->
+  <div id="results-section" class="card">
+    <div class="results-top">
+      <div class="results-left">
+        <span class="results-header">Generated tasks</span>
+        <span class="task-count" id="task-count"></span>
+        <span class="saved-badge" id="saved-badge">Restored from last session</span>
+      </div>
+      <div class="action-row">
+        <button class="action-btn" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="action-btn danger" onclick="clearSaved()">✕ Clear</button>
+      </div>
+    </div>
+    <div id="task-list"></div>
+  </div>
+
+</div>
+
+<script>
+
+  // ─── STATE ───────────────────────────────────────────────────────────────
+  // Two pieces of global state:
+  //   currentModel  — which API we're calling right now
+  //   currentTasks  — the last set of tasks (for CSV export + clipboard)
+
+  let currentModel = 'gemini';
+  let currentTasks = [];
+
+  const STORAGE_KEY = 'prd_tasks_v1'; // key we use in localStorage
+
+
+  // ─── MODEL SWITCHER ──────────────────────────────────────────────────────
+  // Swaps the active button style and updates the API key label/hint/placeholder
+  // so the user always knows which key to paste.
+
+  function switchModel(model) {
+    currentModel = model;
+
+    document.getElementById('btn-gemini').classList.toggle('active', model === 'gemini');
+    document.getElementById('btn-claude').classList.toggle('active', model === 'claude');
+
+    const keyInput = document.getElementById('api-key');
+    const keyLabel = document.getElementById('key-label');
+    const keyHint  = document.getElementById('key-hint');
+    const keyLink  = document.getElementById('key-link');
+
+    if (model === 'gemini') {
+      keyLabel.textContent  = 'Google AI Studio API Key';
+      keyInput.placeholder  = 'AIza...';
+      keyLink.textContent   = 'aistudio.google.com';
+      keyLink.href          = 'https://aistudio.google.com/app/apikey';
+      keyHint.childNodes[0].textContent = 'Free key at ';
+    } else {
+      keyLabel.textContent  = 'Anthropic API Key';
+      keyInput.placeholder  = 'sk-ant-...';
+      keyLink.textContent   = 'console.anthropic.com';
+      keyLink.href          = 'https://console.anthropic.com';
+      keyHint.childNodes[0].textContent = 'Get a key at ';
+    }
+
+    // Clear the key field when switching — don't pre-fill the wrong key
+    keyInput.value = '';
+  }
+
+
+  // ─── GENERATE TASKS ──────────────────────────────────────────────────────
+
+  async function generateTasks() {
+    const apiKey = document.getElementById('api-key').value.trim();
+    const prd    = document.getElementById('prd-input').value.trim();
+
+    if (!apiKey) { showStatus('error', 'Please enter your API key.'); return; }
+    if (!prd)    { showStatus('error', 'Please paste a PRD first.'); return; }
+
+    setLoading(true);
+    showStatus('loading', `Sending to ${currentModel === 'gemini' ? 'Gemini' : 'Claude'}…`);
+
+    try {
+      // The prompt is identical for both models — the API call differs
+      const prompt = `
+You are a Technical Project Manager. Read the following PRD and break it into actionable tasks.
+
+Return ONLY a JSON array. No explanation, no markdown, just the raw JSON.
+
+Each task object must have these exact fields:
+- "title"       : short task name (max 10 words)
+- "description" : one sentence explaining what needs to be done
+- "priority"    : "P1", "P2", or "P3"
+- "team"        : "Engineering", "Design", or "PM"
+- "points"      : story point estimate as a number (1, 2, 3, 5, or 8)
+
+PRD:
+${prd}
+      `.trim();
+
+      // Route to the right API based on currentModel
+      const tasks = currentModel === 'gemini'
+        ? await callGemini(apiKey, prompt)
+        : await callClaude(apiKey, prompt);
+
+      // Tag each task with which model generated it
+      tasks.forEach(t => t._model = currentModel);
+
+      currentTasks = tasks;
+      saveTasks(tasks);   // persist to localStorage
+
+      hideStatus();
+      displayTasks(tasks, false);
+
+    } catch (err) {
+      showStatus('error', 'Something went wrong: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+  // ─── GEMINI API ──────────────────────────────────────────────────────────
+
+  async function callGemini(apiKey, prompt) {
+    const model    = 'gemini-3.6-flash';
+    const url      = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' }
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || `HTTP ${response.status}`);
+    }
+
+    const data    = await response.json();
+    const rawText = data.candidates[0].content.parts[0].text;
+    return JSON.parse(rawText.replace(/```json|```/g, '').trim());
+  }
+
+
+  // ─── CLAUDE API ──────────────────────────────────────────────────────────
+
+  async function callClaude(apiKey, prompt) {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || `HTTP ${response.status}`);
+    }
+
+    const data    = await response.json();
+    const rawText = data.content[0].text;
+    return JSON.parse(rawText.replace(/```json|```/g, '').trim());
+  }
+
+
+  // ─── LOCALSTORAGE ────────────────────────────────────────────────────────
+  // localStorage is a simple key-value store built into every browser.
+  // It persists across page refreshes (unlike JS variables which reset).
+  // We store the tasks as a JSON string under STORAGE_KEY.
+
+  function saveTasks(tasks) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } catch (e) {
+      // Storage can fail if the browser is in private mode or quota is exceeded
+      console.warn('Could not save to localStorage:', e);
+    }
+  }
+
+  function loadSavedTasks() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function clearSaved() {
+    localStorage.removeItem(STORAGE_KEY);
+    currentTasks = [];
+    document.getElementById('results-section').style.display = 'none';
+  }
+
+
+  // ─── DISPLAY ─────────────────────────────────────────────────────────────
+  // fromStorage flag controls whether to show the "Restored" badge
+
+  function displayTasks(tasks, fromStorage) {
+    const list    = document.getElementById('task-list');
+    const section = document.getElementById('results-section');
+    const counter = document.getElementById('task-count');
+    const badge   = document.getElementById('saved-badge');
+
+    list.innerHTML = '';
+    counter.textContent = `${tasks.length} task${tasks.length !== 1 ? 's' : ''}`;
+    badge.style.display = fromStorage ? 'inline-block' : 'none';
+
+    tasks.forEach((task, index) => {
+      const priorityClass = { P1: 'chip-p1', P2: 'chip-p2', P3: 'chip-p3' }[task.priority] || 'chip-p3';
+      const modelChip = task._model === 'claude'
+        ? '<span class="chip chip-claude">Claude</span>'
+        : '<span class="chip chip-gemini">Gemini</span>';
+
+      const card = document.createElement('div');
+      card.className = 'task-card';
+      card.innerHTML = `
+        <button class="copy-btn" title="Copy task" onclick="copyTask(${index}, this)">⎘</button>
+        <div class="task-title">${task.title}</div>
+        <div class="task-description">${task.description}</div>
+        <div class="task-meta">
+          <span class="chip ${priorityClass}">${task.priority}</span>
+          <span class="chip chip-team">${task.team}</span>
+          <span class="chip chip-points">${task.points} pts</span>
+          ${modelChip}
+        </div>
+      `;
+      list.appendChild(card);
+    });
+
+    section.style.display = 'block';
+  }
+
+
+  // ─── COPY SINGLE TASK ────────────────────────────────────────────────────
+
+  function copyTask(index, btn) {
+    const task = currentTasks[index];
+    const text = `${task.title}\n${task.description}\nPriority: ${task.priority} | Team: ${task.team} | Points: ${task.points}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '⎘'; btn.classList.remove('copied'); }, 1500);
+    });
+  }
+
+
+  // ─── EXPORT CSV ──────────────────────────────────────────────────────────
+
+  function exportCSV() {
+    if (!currentTasks.length) return;
+
+    const headers = ['Title', 'Description', 'Priority', 'Team', 'Points', 'Model'];
+    const rows    = currentTasks.map(t => [
+      `"${t.title}"`, `"${t.description}"`, `"${t.priority}"`,
+      `"${t.team}"`, t.points, `"${t._model || ''}"`
+    ].join(','));
+
+    const csv  = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'tasks.csv'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+
+  // ─── HELPERS ─────────────────────────────────────────────────────────────
+
+  function setLoading(isLoading) {
+    const btn       = document.getElementById('generate-btn');
+    btn.disabled    = isLoading;
+    btn.textContent = isLoading ? 'Generating…' : 'Generate tasks';
+  }
+
+  function showStatus(type, message) {
+    const el       = document.getElementById('status-msg');
+    el.className   = 'status-msg ' + (type === 'error' ? 'status-error' : 'status-loading');
+    el.textContent = message;
+    el.style.display = 'block';
+  }
+
+  function hideStatus() {
+    document.getElementById('status-msg').style.display = 'none';
+  }
+
+
+  // ─── ON PAGE LOAD ────────────────────────────────────────────────────────
+  // If there are saved tasks in localStorage, restore them immediately
+  // so the user sees their last session without hitting the API again.
+
+  (function init() {
+    const saved = loadSavedTasks();
+    if (saved && saved.length) {
+      currentTasks = saved;
+      displayTasks(saved, true);  // true = show "Restored" badge
+    }
+  })();
+
+</script>
+</body>
+</html>

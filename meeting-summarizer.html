@@ -154,7 +154,7 @@
 <div class="container">
 
   <h1>Meeting summarizer</h1>
-  <p class="subtitle">Paste a meeting or standup transcript. Get a summary, action items, and decisions.</p>
+  <p class="subtitle">Paste a meeting or standup transcript. Get a summary, action items, and decisions. Powered by Gemini 3.6 Flash.</p>
 
   <div class="card">
 
@@ -270,7 +270,7 @@ ${transcript}
       //   1. API key goes in the URL, not a header
       //   2. Request body uses "contents" instead of "messages"
       //   3. responseMimeType: 'application/json' guarantees clean JSON back
-      const model   = 'gemini-2.5-flash';
+      const model   = 'gemini-3.6-flash';
       const url     = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
       const response = await fetch(url, {
