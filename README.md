@@ -1,6 +1,6 @@
 # Gen AI Portfolio
 
-Three small AI-powered tools, each built from scratch to learn generative AI hands-on while transitioning into technical project management roles.
+Four small AI-powered tools, each built from scratch to learn generative AI hands-on while transitioning into technical project management roles.
 
 **Live site:** https://bezetam.github.io/ai-projects/portfolio.html
 
@@ -24,17 +24,25 @@ Estimates project scope and timeline using a locally-run DeepSeek R1 model (via 
 **Stack:** Python · Streamlit · LM Studio · DeepSeek R1
 **Note:** requires a local LM Studio setup to run; not hosted here.
 
+### 4. Release Notes Agent
+Paste raw ticket/release data, get back three tailored release notes generated from the same source — technical detail for engineering, plain language for customers, business impact for leadership. Switches between the Gemini and Claude APIs from the same interface, with sample data pre-filled so it's usable immediately.
+
+**Stack:** Vanilla JS · Claude API · Gemini API
+**File:** [`release-notes-demo.html`](./release-notes-demo.html)
+**Also available as:** a standalone Python CLI at [github.com/bezetam/release-notes-agent](https://github.com/bezetam/release-notes-agent), which adds a deterministic template fallback for when no API key is set.
+
 ## What this demonstrates
 
-- Prompt engineering for structured JSON output
+- Prompt engineering for structured JSON and audience-adaptive text output
 - Multi-provider API integration (Claude + Gemini)
 - Local LLM inference vs. cloud API tradeoffs
 - Async/await, error handling, and empty-state design
 - Client-side data persistence
+- Iterating on prompts against real output rather than stopping at the first working version
 
 ## Running the HTML projects locally
 
-Each `.html` file is self-contained — download it, open it in any browser, and paste in your own API key (Gemini keys are free at [aistudio.google.com](https://aistudio.google.com/app/apikey)).
+Each `.html` file is self-contained — download it, open it in any browser, and paste in your own API key (Gemini keys are free at [aistudio.google.com](https://aistudio.google.com/app/apikey)). Keep all four HTML files in the same folder — `portfolio.html`'s project links are relative paths, so they'll 404 if moved apart.
 
 ---
 
