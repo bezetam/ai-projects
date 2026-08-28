@@ -389,6 +389,7 @@
     .spec:nth-child(2) { animation-delay: 0.15s; }
     .spec:nth-child(3) { animation-delay: 0.25s; }
     .spec:nth-child(4) { animation-delay: 0.35s; }
+    .spec:nth-child(5) { animation-delay: 0.45s; }
   }
 
   @keyframes rise {
@@ -402,7 +403,7 @@
 <div class="wrap">
 
   <div class="eyebrow">Gen AI portfolio — technical project manager track</div>
-  <h1>Four tools, four different ways of putting AI to work.</h1>
+  <h1>Five tools, five different ways of putting AI to work.</h1>
   <div class="contact contact-top">
     <span class="contact-name">Alan Bezet</span>
     <span class="contact-sep">·</span>
@@ -411,11 +412,11 @@
     <a class="contact-link" href="mailto:alan.bezet@gmail.com">alan.bezet@gmail.com</a>
   </div>
   <p class="lede">
-    I'm transitioning into technical project management roles and building hands-on fluency with generative AI along the way. Each project below solves a real PM problem and exercises a different part of the stack — <strong>cloud APIs, local inference, structured-output prompting, and audience-adaptive generation</strong>.
+    I'm transitioning into technical project management roles and building hands-on fluency with generative AI along the way. Each project below solves a real PM problem and exercises a different part of the stack — <strong>cloud APIs, local inference, structured-output prompting, audience-adaptive generation, and multi-agent orchestration</strong>.
   </p>
 
   <div class="schematic">
-    <div class="schematic-label">Common pattern across all four</div>
+    <div class="schematic-label">Common pattern across all five</div>
     <div class="schematic-row">
       <div class="sblock">
         <div class="sblock-title">Messy input</div>
@@ -436,7 +437,7 @@
 
   <div class="section-header">
     <div class="section-title">Spec sheets</div>
-    <div class="section-count">004 projects</div>
+    <div class="section-count">005 projects</div>
   </div>
 
   <!-- Project 1 -->
@@ -541,9 +542,34 @@
     </div>
   </div>
 
+  <!-- Project 5 -->
+  <div class="spec">
+    <span class="stamp">Shipped</span>
+    <div class="spec-top">
+      <div>
+        <div class="spec-docket">NO. 005 — MULTI-AGENT ORCHESTRATION</div>
+        <div class="spec-title">Program Status Rollup Agent</div>
+      </div>
+    </div>
+    <p class="spec-pitch">
+      Paste in raw sprint updates for every team on a program and get back a single leadership-ready status. One agent pass reads each team's notes and returns a Green, Amber, or Red rating with specific risks; a second pass reads all the team summaries together and produces one program-level status, surfacing cross-team dependencies that no single team's own report would show.
+    </p>
+    <div class="spec-row-label">Stack</div>
+    <div class="tags">
+      <span class="tag">Vanilla JS</span>
+      <span class="tag">Claude API</span>
+      <span class="tag">Gemini API</span>
+    </div>
+    <p class="skill-line"><strong>Skill demonstrated:</strong> multi-step agent orchestration, where one agent's output feeds directly into the next agent's input instead of a single prompt-and-response, plus structured JSON output and error handling that keeps the tool usable when one team's analysis fails instead of crashing the whole run.</p>
+    <div class="spec-bottom">
+      <a class="spec-link" href="program-status-rollup-demo.html">Open project ↗</a>
+      <span class="spec-note">runs locally, no server needed</span>
+    </div>
+  </div>
+
   <div class="skills-footer">
     <div class="section-title">Gen AI concepts practiced</div>
-    <p class="skills-footer-sub">Skills built across all four projects, transferable to AI tooling work in a TPM role.</p>
+    <p class="skills-footer-sub">Skills built across all five projects, transferable to AI tooling work in a TPM role.</p>
     <div class="skill-grid">
       <span class="skill-pill">Prompt engineering</span>
       <span class="skill-pill">Structured JSON output</span>
@@ -554,6 +580,7 @@
       <span class="skill-pill">Client-side persistence</span>
       <span class="skill-pill">Empty-state design</span>
       <span class="skill-pill">Audience-adaptive output</span>
+      <span class="skill-pill">Multi-agent orchestration</span>
     </div>
   </div>
 

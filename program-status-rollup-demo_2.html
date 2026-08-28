@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Program Status Rollup Agent</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      padding: 40px 20px;
+    }
+
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: #6b6b66; margin-bottom: 28px; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0deda;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b6b66;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    .field-row { margin-bottom: 16px; }
+    .field-row:last-child { margin-bottom: 0; }
+
+    .key-row { display: flex; gap: 10px; margin-bottom: 16px; }
+
+    select, .key-row input, input[type="text"], input[type="password"], input[type="number"], textarea {
+      font-size: 13px;
+      padding: 8px 12px;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      background: #fafaf8;
+      color: #1a1a18;
+      font-family: system-ui, sans-serif;
+    }
+
+    .key-row select { flex: 0 0 auto; }
+    .key-row input { flex: 1; font-family: monospace; }
+
+    select:focus, input:focus, textarea:focus { outline: none; border-color: #888; }
+
+    .key-hint { font-size: 12px; color: #9b9b95; margin-bottom: 16px; }
+    .key-hint a { color: #555; }
+
+    textarea {
+      width: 100%;
+      resize: vertical;
+      line-height: 1.6;
+    }
+    textarea.notes-input { height: 90px; }
+    textarea.blockers-input { height: 60px; }
+
+    button {
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .primary-btn {
+      margin-top: 4px;
+      width: 100%;
+      background: #1a1a18;
+      color: #fff;
+    }
+    .primary-btn:hover    { background: #333330; }
+    .primary-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+    .add-team-btn {
+      width: 100%;
+      background: #fafaf8;
+      border: 1px solid #e0deda;
+      color: #6b6b66;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .add-team-btn:hover { border-color: #b5b2ac; color: #1a1a18; }
+
+    .remove-team-btn {
+      background: none;
+      border: none;
+      color: #9b9b95;
+      font-size: 12px;
+      padding: 2px 4px;
+      cursor: pointer;
+    }
+    .remove-team-btn:hover { color: #993C1D; }
+
+    .text-toggle-btn {
+      background: none;
+      border: none;
+      color: #555;
+      font-size: 12px;
+      text-decoration: underline;
+      padding: 0;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .text-toggle-btn:hover { color: #1a1a18; }
+
+    .status-msg { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+    .status-loading { background: #f0efeb; color: #5a5a55; }
+    .status-error   { background: #FAECE7; color: #993C1D; }
+
+    /* ── Team input blocks ── */
+    .team-block {
+      background: #fafaf8;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .team-block-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .team-name-input { flex: 1; font-size: 14px; font-weight: 600; }
+    .sprint-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .sprint-row input { width: 64px; }
+    .sprint-row span { font-size: 13px; color: #6b6b66; }
+
+    /* ── Results ── */
+    #results-section { display: none; }
+
+    .section-block { margin-bottom: 22px; }
+    .section-block:last-child { margin-bottom: 0; }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b6b66;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-count {
+      font-size: 11px;
+      background: #f0efeb;
+      color: #5a5a55;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    .summary-text {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #1a1a18;
+      background: #fafaf8;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+
+    .item-row {
+      background: #fafaf8;
+      border: 1px solid #e0deda;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .item-row:last-child { margin-bottom: 0; }
+
+    .item-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .item-team-name { font-weight: 600; }
+    .item-text { margin-bottom: 6px; line-height: 1.5; }
+    .item-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .chip { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+    .chip-green   { background: #E7F4EA; color: #1F7A44; }
+    .chip-amber   { background: #FAEEDA; color: #854F0B; }
+    .chip-red     { background: #FAECE7; color: #993C1D; }
+    .chip-neutral { background: #f0efeb; color: #5a5a55; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <h1>Program status rollup</h1>
+  <p class="subtitle">Paste in each team's raw sprint update. One AI pass reads each team, a second rollup pass synthesizes them into a single program status and surfaces cross-team risks no single team's report would show alone. Powered by Claude or Gemini.</p>
+
+  <div class="card">
+
+    <div class="field-row">
+      <label for="api-key">API key</label>
+      <div class="key-row">
+        <select id="provider-select" onchange="updateProviderHint()">
+          <option value="gemini">Gemini</option>
+          <option value="claude">Claude</option>
+        </select>
+        <input type="password" id="api-key" placeholder="AIza..." />
+      </div>
+      <p class="key-hint" id="key-hint">
+        Free key (no credit card) at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>.
+        Your key never leaves your browser.
+      </p>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <label style="margin-bottom:10px;">Teams</label>
+      <button type="button" id="bulk-toggle-btn" class="text-toggle-btn" onclick="toggleBulkPaste()">Paste update for all teams</button>
+    </div>
+
+    <div id="bulk-paste-wrap" style="display:none; margin-bottom:16px;">
+      <textarea id="bulk-paste-input" style="width:100%; height:200px;" placeholder="Team: Checkout & Payments
+Closed: 9/11
+Blockers: PCI review not scheduled; waiting on vendor rate limits
+Notes: paste this team's raw standup or status update here - can run multiple lines.
+
+Team: Fulfillment & Logistics
+Closed: 5/9
+Blockers: waiting on shared schema from Data Platform
+Notes: ..."></textarea>
+      <p class="key-hint">One block per team, blank line between teams, in this order: Team / Closed / Blockers / Notes. Blockers on one line, separated by semicolons. This replaces all teams below when applied.</p>
+      <button type="button" class="primary-btn" style="margin-bottom:16px;" onclick="applyBulkPaste()">Apply and replace teams</button>
+    </div>
+
+    <div id="teams-list"></div>
+    <button type="button" class="add-team-btn" onclick="addTeam()">+ Add team</button>
+
+    <button id="generate-btn" class="primary-btn" onclick="runRollup()">Run program rollup</button>
+    <div id="status-msg" style="display:none"></div>
+
+  </div>
+
+  <!-- Results -->
+  <div id="results-section" class="card">
+
+    <div class="section-block">
+      <div class="section-title">
+        Program status
+        <span class="chip chip-neutral" id="overall-chip"></span>
+      </div>
+      <div class="summary-text" id="exec-summary"></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-title">
+        Cross-team risks
+        <span class="section-count" id="risk-count"></span>
+      </div>
+      <div id="risk-list"></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-title">
+        Team breakdown
+        <span class="section-count" id="team-count"></span>
+      </div>
+      <div id="team-breakdown-list"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+  // ─── DEFAULT SAMPLE DATA ───────────────────────────────────────────────
+  // Deliberately includes a cross-team dependency (Data Platform blocking
+  // Fulfillment) that no single team's own status would flag on its own -
+  // that's the case for why a rollup agent, not just four status reports.
+
+  const DEFAULT_TEAMS = [
+    {
+      name: 'Checkout & Payments',
+      closed: 9, total: 11,
+      blockers: 'PCI compliance review not yet scheduled by Security\nWaiting on updated rate limits from payment vendor',
+      notes: 'Sprint wrapped with 9 of 11 stories closed. New payment gateway integration is code-complete and in staging, but the PCI compliance review from Security hasn\'t been scheduled yet - we\'ve pinged them twice this week with no response. Cart abandonment fix shipped and is showing a 3% conversion lift in early A/B data.'
+    },
+    {
+      name: 'Fulfillment & Logistics',
+      closed: 5, total: 9,
+      blockers: 'Shared inventory schema not finalized with Data Platform team\nOne engineer out on leave through end of sprint',
+      notes: 'Warehouse routing service migration to the new microservice is about 60% done. Hit a data model mismatch with the legacy inventory system that cost 4 days of rework. Team is confident in catching up next sprint but needs Data Platform\'s help finalizing the shared inventory schema before they can close out the migration.'
+    },
+    {
+      name: 'Mobile App',
+      closed: 12, total: 13,
+      blockers: '',
+      notes: 'On track. Checkout redesign passed usability testing with strong results. iOS build is in App Store review, Android release scheduled for next Tuesday. No blockers this sprint.'
+    },
+    {
+      name: 'Data & Analytics Platform',
+      closed: 4, total: 10,
+      blockers: 'Inventory schema reconciliation taking longer than estimated\nUnplanned Finance dashboard request ate into sprint capacity\nBlocking Fulfillment & Logistics team',
+      notes: 'Behind on the shared inventory schema work Fulfillment is waiting on - underestimated the effort to reconcile three legacy data sources. Also absorbed an unplanned request from Finance for updated revenue dashboards, which took priority for two days. Not confident the schema work closes before Fulfillment needs it.'
+    }
+  ];
+
+  let teamIdCounter = 0;
+
+  function teamBlockHtml(team) {
+    const id = 'team-' + (teamIdCounter++);
+    return `
+      <div class="team-block" id="${id}" data-team-block>
+        <div class="team-block-head">
+          <input type="text" class="team-name-input" value="${escapeAttr(team.name)}" placeholder="Team name" data-field="name" />
+          <button type="button" class="remove-team-btn" onclick="removeTeam('${id}')">Remove</button>
+        </div>
+        <div class="sprint-row">
+          <label style="margin:0; display:inline;">Stories closed</label>
+          <input type="number" min="0" value="${team.closed}" data-field="closed" style="width:56px;" />
+          <span>of</span>
+          <input type="number" min="0" value="${team.total}" data-field="total" style="width:56px;" />
+        </div>
+        <label>Blockers (one per line)</label>
+        <textarea class="blockers-input" data-field="blockers" placeholder="e.g. Waiting on API keys from vendor">${escapeHtml(team.blockers)}</textarea>
+        <div style="height:10px;"></div>
+        <label>Notes</label>
+        <textarea class="notes-input" data-field="notes" placeholder="Paste this team's raw standup or status update...">${escapeHtml(team.notes)}</textarea>
+      </div>`;
+  }
+
+  function renderTeamsList(teamsData) {
+    const list = document.getElementById('teams-list');
+    list.innerHTML = teamsData.map(teamBlockHtml).join('');
+  }
+
+  function addTeam() {
+    const list = document.getElementById('teams-list');
+    list.insertAdjacentHTML('beforeend', teamBlockHtml({ name: '', closed: 0, total: 0, blockers: '', notes: '' }));
+  }
+
+  function removeTeam(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  function readTeamsFromForm() {
+    return [...document.querySelectorAll('[data-team-block]')].map(block => {
+      const get = field => block.querySelector(`[data-field="${field}"]`).value;
+      return {
+        name: get('name').trim() || 'Untitled team',
+        closed: parseInt(get('closed'), 10) || 0,
+        total: parseInt(get('total'), 10) || 0,
+        blockers: get('blockers').split('\n').map(s => s.trim()).filter(Boolean),
+        notes: get('notes').trim()
+      };
+    });
+  }
+
+  // ─── BULK PASTE ─────────────────────────────────────────────────────────
+  // Lets you replace every team in one paste instead of editing each card by
+  // hand. Format is fixed-order per block (Team / Closed / Blockers / Notes)
+  // so parsing stays simple - no JSON, just plain text like the rest of the
+  // portfolio's inputs.
+
+  function toggleBulkPaste() {
+    const wrap = document.getElementById('bulk-paste-wrap');
+    const btn = document.getElementById('bulk-toggle-btn');
+    const opening = wrap.style.display === 'none';
+    wrap.style.display = opening ? 'block' : 'none';
+    btn.textContent = opening ? 'Hide paste box' : 'Paste update for all teams';
+  }
+
+  function parseBulkText(raw) {
+    const blocks = raw.split(/\n(?=\s*Team:)/i).map(b => b.trim()).filter(Boolean);
+    return blocks.filter(b => /^Team:/i.test(b)).map(block => {
+      const lines = block.split('\n');
+      let name = '', closed = 0, total = 0, blockers = '';
+      const noteLines = [];
+      let collectingNotes = false;
+
+      lines.forEach(line => {
+        if (/^Team:/i.test(line)) {
+          name = line.replace(/^Team:/i, '').trim();
+          collectingNotes = false;
+        } else if (/^Closed:/i.test(line)) {
+          const m = line.match(/(\d+)\s*\/\s*(\d+)/);
+          if (m) { closed = parseInt(m[1], 10); total = parseInt(m[2], 10); }
+          collectingNotes = false;
+        } else if (/^Blockers:/i.test(line)) {
+          blockers = line.replace(/^Blockers:/i, '').trim()
+            .split(';').map(s => s.trim()).filter(Boolean).join('\n');
+          collectingNotes = false;
+        } else if (/^Notes:/i.test(line)) {
+          noteLines.push(line.replace(/^Notes:/i, '').trim());
+          collectingNotes = true;
+        } else if (collectingNotes) {
+          noteLines.push(line);
+        }
+      });
+
+      return {
+        name: name || 'Untitled team',
+        closed, total,
+        blockers,
+        notes: noteLines.join('\n').trim()
+      };
+    });
+  }
+
+  function applyBulkPaste() {
+    const raw = document.getElementById('bulk-paste-input').value.trim();
+    if (!raw) { showStatus('error', 'Paste at least one team block first.'); return; }
+    const parsed = parseBulkText(raw);
+    if (parsed.length === 0) {
+      showStatus('error', 'Couldn\'t find any blocks starting with "Team:" - check the format against the placeholder text.');
+      return;
+    }
+    renderTeamsList(parsed);
+    toggleBulkPaste();
+    document.getElementById('bulk-paste-input').value = '';
+    document.getElementById('results-section').style.display = 'none';
+    hideStatus();
+  }
+
+  // ─── PROVIDER TOGGLE ───────────────────────────────────────────────────
+
+  function updateProviderHint() {
+    const provider = document.getElementById('provider-select').value;
+    const keyInput = document.getElementById('api-key');
+    const hint = document.getElementById('key-hint');
+    if (provider === 'claude') {
+      keyInput.placeholder = 'sk-ant-...';
+      hint.innerHTML = 'Free-tier key at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>. Your key never leaves your browser.';
+    } else {
+      keyInput.placeholder = 'AIza...';
+      hint.innerHTML = 'Free key (no credit card) at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>. Your key never leaves your browser.';
+    }
+  }
+
+  // ─── MODEL CALLS ───────────────────────────────────────────────────────
+
+  async function callModel(provider, apiKey, prompt) {
+    if (provider === 'claude') {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-5',
+          max_tokens: 1024,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || `HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      const rawText = data.content.map(b => b.text || '').join('');
+      return JSON.parse(rawText.replace(/```json|```/g, '').trim());
+    } else {
+      const model = 'gemini-3.6-flash';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' }
+        })
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || `HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      const rawText = data.candidates[0].content.parts[0].text;
+      return JSON.parse(rawText.replace(/```json|```/g, '').trim());
+    }
+  }
+
+  function teamPrompt(team) {
+    return `
+You are a program status analyst. Read this team's raw sprint update and return ONLY a JSON object, no markdown, no commentary, with this EXACT shape:
+
+{
+  "status": "Green" | "Amber" | "Red",
+  "summary": "2-3 sentence plain-English summary for an executive audience",
+  "risks": ["short risk phrase", ...]
+}
+
+Only include real, specific risks or blockers actually mentioned below (0 to 3 items). Do not invent generic risks.
+
+Team: ${team.name}
+Sprint completion: ${team.closed} of ${team.total} stories closed
+Open blockers: ${team.blockers.length ? team.blockers.join('; ') : 'none reported'}
+Raw notes: ${team.notes}
+    `.trim();
+  }
+
+  function rollupPrompt(teamResults) {
+    const lines = teamResults.map(t => `- ${t.name}: ${t.status}. ${t.summary} Risks: ${t.risks.length ? t.risks.join('; ') : 'none'}`).join('\n');
+    return `
+You are a Technical Program Manager producing a program-level status rollup for leadership, based on AI-generated summaries from each team on the program. Look across all teams for shared or cross-team dependencies and risks, not just each team's own status. Return ONLY a JSON object, no markdown, no commentary, with this EXACT shape:
+
+{
+  "overallStatus": "Green" | "Amber" | "Red",
+  "crossTeamRisks": ["short risk phrase", ...],
+  "executiveSummary": "3-5 sentence paragraph for leadership"
+}
+
+A single Red status, or a blocking dependency between teams, should generally pull the overall program status to at least Amber even if other teams report Green.
+
+Team summaries:
+${lines}
+    `.trim();
+  }
+
+  // ─── RUN ────────────────────────────────────────────────────────────────
+
+  async function runRollup() {
+    const provider = document.getElementById('provider-select').value;
+    const apiKey = document.getElementById('api-key').value.trim();
+    const teams = readTeamsFromForm();
+
+    if (!apiKey) { showStatus('error', 'Please enter your API key.'); return; }
+    if (teams.length === 0) { showStatus('error', 'Add at least one team first.'); return; }
+
+    setLoading(true);
+    document.getElementById('results-section').style.display = 'none';
+
+    const results = [];
+    try {
+      for (let i = 0; i < teams.length; i++) {
+        const team = teams[i];
+        showStatus('loading', `Analyzing ${team.name} (${i + 1} of ${teams.length})…`);
+        const parsed = await callModel(provider, apiKey, teamPrompt(team));
+        results.push({ name: team.name, status: parsed.status, summary: parsed.summary, risks: parsed.risks || [] });
+      }
+
+      showStatus('loading', 'Synthesizing program rollup…');
+      const rollup = await callModel(provider, apiKey, rollupPrompt(results));
+
+      hideStatus();
+      displayResults(rollup, results);
+
+    } catch (err) {
+      showStatus('error', 'Something went wrong: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ─── DISPLAY ─────────────────────────────────────────────────────────────
+
+  function chipClass(status) {
+    const s = (status || '').toLowerCase();
+    if (s === 'green') return 'chip-green';
+    if (s === 'amber') return 'chip-amber';
+    if (s === 'red') return 'chip-red';
+    return 'chip-neutral';
+  }
+
+  function displayResults(rollup, teamResults) {
+    const section = document.getElementById('results-section');
+
+    const overallChip = document.getElementById('overall-chip');
+    overallChip.textContent = rollup.overallStatus || 'Unknown';
+    overallChip.className = 'chip ' + chipClass(rollup.overallStatus);
+
+    document.getElementById('exec-summary').textContent = rollup.executiveSummary;
+
+    const riskList = document.getElementById('risk-list');
+    const riskCount = document.getElementById('risk-count');
+    riskList.innerHTML = '';
+    const risks = rollup.crossTeamRisks || [];
+    if (risks.length === 0) {
+      riskList.innerHTML = '<div class="item-row" style="color:#9b9b95;">No cross-team risks identified</div>';
+      riskCount.textContent = '0';
+    } else {
+      riskCount.textContent = risks.length;
+      risks.forEach(risk => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `<div class="item-text">${escapeHtml(risk)}</div>`;
+        riskList.appendChild(row);
+      });
+    }
+
+    const breakdownList = document.getElementById('team-breakdown-list');
+    const teamCount = document.getElementById('team-count');
+    breakdownList.innerHTML = '';
+    teamCount.textContent = teamResults.length;
+    teamResults.forEach(team => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      const riskChips = (team.risks || []).map(r => `<span class="chip chip-amber">${escapeHtml(r)}</span>`).join('');
+      row.innerHTML = `
+        <div class="item-head">
+          <span class="item-team-name">${escapeHtml(team.name)}</span>
+          <span class="chip ${chipClass(team.status)}">${escapeHtml(team.status || 'Unknown')}</span>
+        </div>
+        <div class="item-text">${escapeHtml(team.summary)}</div>
+        <div class="item-meta">${riskChips}</div>
+      `;
+      breakdownList.appendChild(row);
+    });
+
+    section.style.display = 'block';
+  }
+
+  // ─── HELPERS ─────────────────────────────────────────────────────────────
+
+  function setLoading(isLoading) {
+    const btn = document.getElementById('generate-btn');
+    btn.disabled = isLoading;
+    btn.textContent = isLoading ? 'Running…' : 'Run program rollup';
+  }
+
+  function showStatus(type, message) {
+    const el = document.getElementById('status-msg');
+    el.className = 'status-msg ' + (type === 'error' ? 'status-error' : 'status-loading');
+    el.textContent = message;
+    el.style.display = 'block';
+  }
+
+  function hideStatus() {
+    document.getElementById('status-msg').style.display = 'none';
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str == null ? '' : String(str);
+    return d.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return escapeHtml(str).replace(/"/g, '&quot;');
+  }
+
+  // ─── INIT ───────────────────────────────────────────────────────────────
+
+  renderTeamsList(DEFAULT_TEAMS);
+
+</script>
+
+</body>
+</html>
